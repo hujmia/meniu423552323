@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pulse Menu</title>
+  <style>
+    @font-face { font-family: 'Inter'; font-weight: 100 900; font-display: swap; src: local('Inter'), local('Inter-Regular'), local('Segoe UI'), local('Arial'); }
+
+    :root {
+      --menu-color: 210, 210, 210;
+      --menu-scale: 1;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background: transparent; overflow: hidden; font-family: Inter, sans-serif; cursor: none; }
+    body.drag-mode { cursor: default; }
+
+    .Desc {
+      position: absolute; display: none; left: 50%; bottom: 4vw; transform: translate(-50%);
+      width: auto; height: 1.3021vw; background-color: #000c; border-radius: .2604vw;
+      padding: 14px; font-weight: 180; font-size: .651vw; color: #fff;
+      justify-content: center; align-items: center; white-space: nowrap;
+    }
+    .Desc.visible { display: flex; }
+
+    .PWrapper {
+      position: absolute; display: none;
+      justify-content: center; align-items: center;
+      flex-direction: column; font-family: Inter;
+      transform-origin: top left;
+    }
+    .PWrapper.visible { display: flex; }
+
+    .PWrapper .PElements {
+      position: relative; display: flex; justify-content: flex-start;
+      align-items: center; flex-direction: row; gap: .2604vw;
+    }
+
+    .PWrapper .PElements .PScroll {
+      position: absolute; display: flex; right: -1vw; width: .72vw; height: 100%;
+      background: #050505e6; justify-content: flex-start; align-items: center;
+      flex-direction: column; gap: .15vw; border-radius: .20vw;
+      box-shadow: inset 0 0 .22vw rgba(0,0,0,0.8), 0 0 .35vw rgba(0,0,0,0.5);
+    }
+    .PWrapper .PElements .PScroll span {
+      opacity: 0.85;
+    }
+    .PWrapper .PElements .PScroll .PSProgressWrapper {
+      position: relative; display: flex; width: .32vw; height: 90%;
+      justify-content: center; align-items: flex-start;
+    }
+    .PWrapper .PElements .PScroll .PSProgress {
+      position: relative; display: flex; width: .32vw; margin-top: .20vw;
+      background: rgb(var(--menu-color)); border-radius: .20vw;
+      box-shadow: 0 0 .25vw rgba(var(--menu-color),0.9), 0 0 .15vw rgba(var(--menu-color),0.8);
+      transition: top .25s ease, height .25s ease;
+    }
+
+    .PWrapper .PElements .PRightElements {
+      position: relative; display: flex; width: 19.0104vw;
+      justify-content: center; align-items: center; flex-direction: column;
+    }
+
+    .PWrapper .PBanner {
+      position: relative; display: flex; width: 100%; height: 6.2vw;
+      justify-content: center; align-items: center;
+      border-top-left-radius: .4167vw; border-top-right-radius: .4167vw; overflow: hidden;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 50%, #1a1a2e 100%);
+    }
+    .PWrapper .PBanner img {
+      position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: center;
+    }
+    .PWrapper .PBanner .banner-text {
+      position: relative; z-index: 1; font-size: 1.8vw; font-weight: 700;
+      color: #fff; text-shadow: 0 0 1vw rgba(var(--menu-color),0.8);
+      letter-spacing: .15vw;
+    }
+    .PWrapper .PBanner .banner-sub {
+      position: absolute; bottom: .4vw; font-size: .55vw; font-weight: 300;
+      color: rgba(255,255,255,0.6); letter-spacing: .1vw; z-index:1;
+    }
+
+    .PWrapper .PCategories {
+      position: relative; display: flex; width: 100%; height: 1.5625vw;
+      margin-bottom: .2604vw; justify-content: center; align-items: center;
+      flex-direction: row; background-color: #080808; border-left: .0521vw solid #151515;
+      border-right: .0521vw solid #151515; border-bottom: .0521vw solid #151515;
+      border-bottom-left-radius: .3125vw; border-bottom-right-radius: .3125vw; overflow: hidden;
+    }
+    .PWrapper .PCategories .PCategory {
+      position: relative; display: flex; flex: 1; text-align: center; height: 100%;
+      justify-content: center; align-items: center; font-size: .5729vw; font-weight: 400;
+      color: #555; padding: 0 .2vw;
+      cursor: default; transition: color .2s ease, background .2s ease;
+    }
+    .PWrapper .PCategories .PCategory.active {
+      background: linear-gradient(0deg, rgba(var(--menu-color),.15) 0%, rgba(var(--menu-color),.03) 100%);
+      color: #fff;
+    }
+
+    .PWrapper .PTabs {
+      position: relative; display: flex; width: 19.0104vw; height: auto;
+      max-height: 14.0625vw; padding-bottom: .0521vw; justify-content: flex-start;
+      align-items: center; flex-direction: column; background-color: #0009;
+      border-radius: .3125vw; overflow-y: hidden;
+    }
+    .PWrapper .PTabs .PTab {
+      position: relative; display: flex; width: 100%; height: 1.5625vw;
+      min-height: 1.5625vw; max-height: 1.5625vw; justify-content: center; align-items: center;
+    }
+    .PWrapper .PTabs .PTab .PTLabel {
+      position: absolute; display: flex; left: .5vw; width: 60%;
+      font-size: .625vw; font-weight: 300; color: #aaa; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; align-items: center;
+      height: 100%;
+    }
+    .PWrapper .PTabs .PTab.active .PTLabel { color: #fff; }
+
+    .selector-bar {
+      position: absolute; width: 100%; background: rgba(var(--menu-color), 0.12);
+      border: 0.052vw solid rgba(var(--menu-color), 0.4);
+      border-radius: .3083vw; box-shadow: 0 0 .2083vw .0339vw rgba(var(--menu-color),0.15);
+      z-index: 0; transition: top 200ms ease, height 120ms ease; pointer-events: none;
+    }
+
+    .PWrapper .PTabs .PTab .Checkbox {
+      position: absolute; display: flex; right: .65vw; width: 1.5625vw; height: .7813vw;
+      top: 50%; transform: translateY(-50%);
+      justify-content: flex-start; align-items: center; background: #1a1a1a;
+      box-shadow: inset 0 .10vw .25vw rgba(0,0,0,0.8), inset 0 -.10vw .20vw rgba(255,255,255,0.05);
+      border-radius: 999vw; transition: .25s ease;
+    }
+    .PWrapper .PTabs .PTab .Checkbox.Checked {
+      background: rgba(var(--menu-color), 0.9);
+      box-shadow: inset 0 .10vw .25vw rgba(0,0,0,0.9), 0 0 .32vw rgba(var(--menu-color), 0.45);
+    }
+    .PWrapper .PTabs .PTab .Checkbox .Inside {
+      position: absolute; display: flex; left: .15vw; width: .4167vw; height: .4167vw;
+      background: #e8e8e8; box-shadow: 0 .05vw .10vw rgba(0,0,0,0.6);
+      border-radius: 999vw; transition: .25s ease;
+    }
+    .PWrapper .PTabs .PTab .Checkbox.Checked .Inside { left: .95vw; }
+
+    .PWrapper .PTabs .PTab .Slider {
+      position: absolute; display: flex; right: .65vw; width: 2.3438vw; height: .2083vw;
+      top: 50%; transform: translateY(-50%);
+      justify-content: flex-start; align-items: center; background-color: #161616;
+      border-radius: .2604vw;
+      box-shadow: inset 0 .12vw .22vw rgba(0,0,0,0.85), 0 0 .15vw rgba(0,0,0,0.8);
+    }
+    .PWrapper .PTabs .PTab .Slider .Progress {
+      position: absolute; display: flex; height: 100%; background: rgba(var(--menu-color),0.85);
+      border-radius: .2604vw;
+    }
+    .PWrapper .PTabs .PTab .Slider .Progress .Thumb {
+      position: absolute; display: flex; right: -.1vw; top: 50%; transform: translateY(-50%);
+      width: .4167vw; height: .4167vw;
+      background-color: #fafafa; border-radius: .5208vw;
+      box-shadow: 0 0 .25vw rgba(255,255,255,0.35);
+    }
+
+    .PWrapper .PTabs .PTab .TOptions {
+      position: absolute; display: flex; right: .65vw; width: 7.8125vw;
+      top: 50%; transform: translateY(-50%);
+      justify-content: flex-end; align-items: center; flex-direction: row; gap: .5208vw;
+    }
+    .PWrapper .PTabs .PTab .TOptions .Slider {
+      position: relative; right: .15vw; width: 2.3438vw; height: .2083vw;
+      top: auto; transform: none;
+    }
+    .PWrapper .PTabs .PTab .TOptions .Checkbox {
+      position: relative; right: 0; width: 1.5625vw; height: .7813vw;
+      top: auto; transform: none;
+    }
+
+    .PWrapper .PTabs .PTab .Scrollable {
+      position: absolute; display: flex; right: .65vw; top: 50%; transform: translateY(-50%);
+      justify-content: center; align-items: center; flex-direction: row; gap: .2604vw;
+      font-size: .625vw; font-weight: 250; color: #fff;
+    }
+    .PWrapper .PTabs .PTab .TOptions .Scrollable {
+      position: relative; right: .15vw; top: auto; transform: none;
+    }
+
+    .PWrapper .PTabs .PTab .Divider {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex;
+      width: 92%; justify-content: space-between; align-items: center;
+      flex-direction: row; gap: .2604vw;
+    }
+    .PWrapper .PTabs .PTab .Divider .Left,
+    .PWrapper .PTabs .PTab .Divider .Right {
+      position: relative; display: flex; width: 15%; height: .2083vw;
+      background-color: #e1e1e1; border-radius: 5vw; min-width: 0;
+    }
+    .PWrapper .PTabs .PTab .Divider .Label {
+      position: relative; display: flex; font-size: .625vw; font-weight: 300;
+      color: #e1e1e1; white-space: nowrap; padding: 0 .5vw;
+    }
+
+    .PWrapper .PTabs .PTab .arrow-right {
+      position: absolute; right: .65vw; top: 50%; transform: translateY(-50%);
+      font-size: .625vw; color: #fff; font-style: normal;
+    }
+
+    .PWrapper .PFooter {
+      position: relative; display: flex; width: 19.0104vw; height: 1.5625vw;
+      margin-top: .2083vw; justify-content: center; align-items: center;
+      background-color: #000; border-radius: .2604vw;
+    }
+    .PWrapper .PFooter .PBuild {
+      position: absolute; left: .5vw; font-size: .625vw; font-weight: 250; color: #fff;
+    }
+    .PWrapper .PFooter .PIndicator {
+      position: absolute; right: .5vw; font-size: .55vw; font-weight: 250; color: #888;
+    }
+
+    .FreecamOverlay {
+      position: fixed; display: none; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 9999;
+    }
+    .FreecamOverlay.visible { display: flex; }
+    .FreecamOverlay .fc-item {
+      position: absolute; font-family: Inter; color: rgba(255,255,255,0.7);
+      font-size: .5vw; font-weight: 300;
+    }
+    .FreecamOverlay .fc-top { top: 1vw; left: 50%; transform: translateX(-50%); font-size: .6vw; color: #fff; }
+    .FreecamOverlay .fc-keys { bottom: 2vw; left: 50%; transform: translateX(-50%); text-align: center; font-size: .45vw; }
+
+    .NotificationsWrapper {
+      position: fixed; bottom: .6vw; right: .6vw; display: flex;
+      flex-direction: column; gap: .45vw; z-index: 9999; pointer-events: none;
+    }
+    .Notification {
+      position: relative; width: 19vw; padding: .75vw .9vw; display: flex;
+      align-items: center; gap: .55vw; pointer-events: auto;
+      background: rgba(0,0,0,0.90); border: .12vw solid rgba(var(--menu-color), 0.85);
+      box-shadow: 0 0 .4vw rgba(var(--menu-color), 0.15);
+      border-radius: .15vw; color: #fff; font-family: Inter;
+      opacity: 0; transform: translateY(1.2vw) translateX(140%);
+      transition: opacity .25s ease, transform .85s cubic-bezier(.19,1,.22,1);
+    }
+    .Notification.enter { opacity: 1; transform: translateY(0) translateX(0); }
+    .Notification .NotificationTitle { font-size: .78vw; font-weight: 700; color: rgb(var(--menu-color)); }
+    .Notification .NotificationDesc { font-size: .64vw; color: #e5e5e5; }
+
+    /* Keybinds & Spectator overlays */
+    .OverlayPanel {
+      position: absolute; display: none; width: 12vw; padding: .5vw;
+      background: rgba(0,0,0,0.85); border: .05vw solid rgba(var(--menu-color),0.3);
+      border-radius: .25vw; font-family: Inter; color: #ccc; font-size: .5vw;
+      z-index: 9998;
+    }
+    .OverlayPanel.visible { display: block; }
+    .OverlayPanel .op-title {
+      font-size: .6vw; font-weight: 600; color: #fff; margin-bottom: .3vw;
+      border-bottom: .05vw solid rgba(var(--menu-color),0.3); padding-bottom: .2vw;
+    }
+    .OverlayPanel .op-row { display: flex; justify-content: space-between; padding: .1vw 0; }
+    .OverlayPanel .op-key { color: rgb(var(--menu-color)); font-weight: 500; }
+
+    /* Drag hint */
+    .DragHint {
+      position: fixed; display: none; top: 2vw; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.9); border: .08vw solid rgba(var(--menu-color),0.6);
+      border-radius: .2vw; padding: .4vw 1vw; color: #fff; font-size: .7vw;
+      font-family: Inter; z-index: 99999;
+    }
+    .DragHint.visible { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="Desc" id="descBar"><span id="descText"></span></div>
+
+<div class="PWrapper" id="menuWrapper">
+  <div class="PBanner" id="banner">
+    <span class="banner-text">PULSE</span>
+  </div>
+
+  <div class="PCategories" id="categoriesBar"></div>
+
+  <div class="PElements">
+    <div class="PScroll">
+      <span style="font-size:.62vw;color:rgba(255,255,255,0.75);margin-top:.15vw">▲</span>
+      <div class="PSProgressWrapper">
+        <div class="PSProgress" id="scrollThumb" style="height:20%;top:0"></div>
+      </div>
+      <span style="font-size:.62vw;color:rgba(255,255,255,0.75)">▼</span>
+    </div>
+    <div class="PRightElements">
+      <div class="PTabs" id="tabsContainer">
+        <div class="selector-bar" id="selectorBar" style="top:0;height:1.5625vw"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="PFooter">
+    <span class="PBuild">Pulse</span>
+    <span class="PIndicator" id="footerIndicator">0 / 0</span>
+  </div>
+</div>
+
+<div class="FreecamOverlay" id="freecamOverlay">
+  <div class="fc-item fc-top">FREE CAM</div>
+  <div class="fc-item fc-keys">WASD - Move &bull; Mouse - Look &bull; Shift - Fast &bull; Scroll - Speed &bull; Backspace - Exit</div>
+</div>
+
+<div class="OverlayPanel" id="keybindsPanel" style="top:10vw;left:1vw;">
+  <div class="op-title">Keybinds</div>
+  <div class="op-row"><span>Open Menu</span><span class="op-key">F6</span></div>
+  <div class="op-row"><span>Navigate</span><span class="op-key">W / S</span></div>
+  <div class="op-row"><span>Adjust Value</span><span class="op-key">A / D</span></div>
+  <div class="op-row"><span>Select / Toggle</span><span class="op-key">Enter</span></div>
+  <div class="op-row"><span>Back</span><span class="op-key">Backspace</span></div>
+</div>
+
+<div class="OverlayPanel" id="spectatorPanel" style="top:10vw;right:1vw;left:auto;">
+  <div class="op-title">Spectator List</div>
+  <div class="op-row"><span>No players nearby</span></div>
+</div>
+
+<div class="DragHint" id="dragHint">Hold LMB and drag to reposition. Press Backspace to save.</div>
+
+<div class="NotificationsWrapper" id="notifWrapper"></div>
+
+<script>
+// ============================================================
+// BANNER CONFIG - Edit your custom banners here (imgur links)
+// Banner size: 19.0104vw x 6.2vw (~365x119px at 1920x1080)
+// ============================================================
+const BANNER_CONFIG = [
+  { name: "Default",    url: "" },
+  { name: "Template 1", url: "" },
+  { name: "Template 2", url: "" },
+  { name: "Template 3", url: "" },
+  { name: "Template 4", url: "" },
+  { name: "Template 5", url: "" },
+];
+// ============================================================
+
+const MENU_DATA = {
+  categories: [
+    { label: "Self", subtabs: [
+      { label: "Essentials", items: [
+        { type:"subMenu", label:"Movement" },
+        { type:"subMenu", label:"Healing" },
+        { type:"slider-checkbox", label:"Invisibility", checked:false, value:150, min:1, max:255 },
+        { type:"scrollable-checkbox", label:"Disable Collision", checked:false, values:["Basic","Max"], value:1 },
+        { type:"checkbox", label:"Fast Punch", checked:false },
+        { type:"checkbox", label:"Super Punch", checked:false },
+        { type:"checkbox", label:"One Punch", checked:false },
+        { type:"checkbox", label:"Stealth Kill Mode", checked:false },
+        { type:"checkbox", label:"Anti-Afk", checked:false },
+        { type:"checkbox", label:"Infinite Stamina", checked:false },
+        { type:"checkbox", label:"Infinite Oxygen", checked:false },
+        { type:"checkbox", label:"Disable Roll Cooldown", checked:false },
+      ]},
+      { label: "Wardrobe", items: [
+        { type:"subMenu", label:"Cloud Outfits" },
+        { type:"subMenu", label:"Premade Outfits" },
+        { type:"divider", label:"Clothes Editor" },
+        { type:"subMenu", label:"Random Outfit" },
+        { type:"slider", label:"Hat", value:0, min:-1, max:50 },
+        { type:"slider", label:"Glasses", value:0, min:-1, max:30 },
+        { type:"slider", label:"Mask", value:0, min:-1, max:30 },
+        { type:"slider", label:"Hair", value:0, min:-1, max:40 },
+        { type:"slider", label:"Arms", value:0, min:-1, max:20 },
+        { type:"slider", label:"Legs", value:0, min:-1, max:20 },
+        { type:"slider", label:"Accesory", value:0, min:-1, max:20 },
+        { type:"slider", label:"Shoes", value:0, min:-1, max:30 },
+        { type:"slider", label:"Shirt", value:0, min:-1, max:30 },
+        { type:"slider", label:"Undershirt", value:0, min:-1, max:30 },
+        { type:"subMenu", label:"Clear Props" },
+        { type:"subMenu", label:"Clear Outfit/Reset Ped" },
+        { type:"subMenu", label:"Set Free Mode" },
+        { type:"divider", label:"Models" },
+        { type:"checkbox", label:"Safe Model", checked:false },
+        { type:"scrollable", label:"Ambient Female", values:["a_f_m_beach_01","a_f_m_bevhills_01","a_f_m_bevhills_02"], value:1 },
+        { type:"scrollable", label:"Ambient Male", values:["a_m_m_beach_01","a_m_m_bevhills_01","a_m_m_business_01"], value:1 },
+        { type:"scrollable", label:"Animals", values:["a_c_boar","a_c_cat_01","a_c_chimp","a_c_chop","a_c_deer"], value:1 },
+        { type:"scrollable", label:"Cutscene", values:["cs_amandatownley","cs_brad","cs_devin","cs_lestercrest"], value:1 },
+        { type:"scrollable", label:"Gang Female", values:["g_f_y_ballas_01","g_f_y_families_01","g_f_y_lost_01"], value:1 },
+        { type:"scrollable", label:"Gang Male", values:["g_m_m_armboss_01","g_m_y_azteca_01","g_m_y_lost_01"], value:1 },
+        { type:"scrollable", label:"Multiplayer", values:["mp_f_freemode_01","mp_m_freemode_01","mp_m_niko_01"], value:1 },
+        { type:"scrollable", label:"Scenario Female", values:["s_f_y_cop_01","s_f_y_hooker_01","s_f_y_stripper_01"], value:1 },
+        { type:"scrollable", label:"Scenario Male", values:["s_m_y_cop_01","s_m_y_swat_01","s_m_m_doctor_01"], value:1 },
+      ]},
+      { label: "Miscellaneous", items: [
+        { type:"subMenu", label:"Free Cam" },
+        { type:"checkbox", label:"Cancel Tasks", checked:false },
+        { type:"checkbox", label:"Force Parachute", checked:false },
+        { type:"scrollable", label:"Clear Tasks", values:["All Tasks","Primary Tasks","Secondary Tasks"], value:1 },
+        { type:"checkbox", label:"Ragdoll", checked:false },
+        { type:"scrollable-checkbox", label:"Solo Session", checked:false, values:["Basic","Advanced","Advanced 2"], value:1 },
+        { type:"scrollable-checkbox", label:"Force View", checked:false, values:["Near","Medium","Far","Cinematic","First Person"], value:1 },
+        { type:"checkbox", label:"Freeze Yourself", checked:false },
+        { type:"checkbox", label:"Burning Mode", checked:false },
+        { type:"checkbox", label:"Ghost Mode", checked:false },
+        { type:"checkbox", label:"Tesla Mode", checked:false },
+        { type:"checkbox", label:"Tesla Mode To WayPoint", checked:false },
+        { type:"checkbox", label:"Lazer Eyes", checked:false },
+        { type:"subMenu", label:"RC Entitys" },
+        { type:"slider-checkbox", label:"Physic Gun", checked:false, value:5, min:1, max:30 },
+      ]},
+      { label: "Anims", items: [
+        { type:"subMenu", label:"Stop Anim" },
+        { type:"divider", label:"Anim Chooser" },
+        { type:"scrollable", label:"Sex Anims", values:["Jerking off","Give a Blowjob","Receive Blowjob","Lap Dance","Sex Car"], value:1 },
+        { type:"scrollable", label:"Dance Anims", values:["Bodhi Dance","Std Dance A","Std Dance B","Low Dance","Salsa","Robot","Nightclub"], value:1 },
+        { type:"scrollable", label:"Social Anims", values:["Drink","Smoke","Fist Pump","Rock On","Salute","Blow Kiss","Slow Clap","Facepalm","Respect"], value:1 },
+        { type:"scrollable", label:"Emote Anims", values:["The Finger","Gang Sign A","Gang Sign B","Cower","Waiting","Jazz Hands","Air Guitar","Chicken"], value:1 },
+        { type:"scrollable", label:"Walkstyles", values:["Normal","Alien","Drunk","Gangster","Posh","Tough","Injured"], value:1 },
+        { type:"scrollable", label:"Facial Expressions", values:["Normal","Angry","Happy","Stressed","Smug","Drunk"], value:1 },
+        { type:"scrollable", label:"Walking Styles", values:["Normal","Alien","Arrogant","Brave","Casual","Confident","Drunk","Gangster","Hobo","Sexy","Swagger","Tough"], value:1 },
+      ]},
+    ]},
+    { label: "Players", subtabs: [
+      { label: "Online", items: [
+        { type:"divider", label:"Player List" },
+        { type:"subMenu", label:"(Dynamic player list)" },
+      ]},
+      { label: "Safe", items: [
+        { type:"checkbox", label:"Bring Player (Client)", checked:false },
+        { type:"scrollable-checkbox", label:"Force Anim (Client)", checked:false, values:["Hands Up","Hand Cuffed"], value:1 },
+        { type:"divider", label:"Networked Features" },
+        { type:"checkbox", label:"Add Friend", checked:false },
+        { type:"checkbox", label:"Spectate", checked:false },
+        { type:"scrollable", label:"Teleport To", values:["Near Player","Player"], value:1 },
+        { type:"subMenu", label:"Copy Outfit" },
+        { type:"subMenu", label:"Force Fall Player" },
+        { type:"checkbox", label:"Force Fall in Loop", checked:false },
+        { type:"subMenu", label:"Join in Player Radio" },
+        { type:"scrollable", label:"Give Health/Armour", values:["Health","Armour"], value:1 },
+        { type:"subMenu", label:"Punch Player" },
+        { type:"checkbox", label:"Punch Player In Loop", checked:false },
+        { type:"checkbox", label:"Rape Player", checked:false },
+      ]},
+      { label: "Troll", items: [
+        { type:"scrollable", label:"Explode Player", values:["Method 1","Method 2","Method 3"], value:1 },
+        { type:"scrollable", label:"Crush/Ram Player", values:["Crush","Ram"], value:1 },
+        { type:"subMenu", label:"Silent Explosion" },
+        { type:"subMenu", label:"Launch Player" },
+        { type:"subMenu", label:"Kill Player" },
+        { type:"subMenu", label:"Ban Player" },
+        { type:"subMenu", label:"Silent Kill Player" },
+        { type:"subMenu", label:"Silent Kill Player #2" },
+        { type:"subMenu", label:"Peds" },
+        { type:"checkbox", label:"Burn Player", checked:false },
+        { type:"checkbox", label:"TP All Vehicles To Player", checked:false },
+        { type:"checkbox", label:"Massacre Player", checked:false },
+        { type:"checkbox", label:"Taze Player", checked:false },
+        { type:"scrollable", label:"Shoot Player", values:["Pistol","Rifle","ShotGun"], value:1 },
+        { type:"scrollable", label:"Give Weapon To Player", values:["Pistol","RPG","Rifle"], value:1 },
+        { type:"scrollable", label:"Attach Object", values:["Jet","Box","Cone","Juke box"], value:1 },
+      ]},
+      { label: "Vehicle", items: [
+        { type:"checkbox", label:"Control Player Vehicle", checked:false },
+        { type:"subMenu", label:"Delete Vehicle" },
+        { type:"subMenu", label:"Kick Player From Vehicle" },
+        { type:"subMenu", label:"Steal Vehicle" },
+        { type:"subMenu", label:"Npc Hijack" },
+        { type:"subMenu", label:"Launch Vehicle" },
+        { type:"divider", label:"Other Vehicle" },
+        { type:"subMenu", label:"Yeet Vehicle" },
+        { type:"subMenu", label:"Glitch Vehicle" },
+        { type:"subMenu", label:"Break Vehicle" },
+        { type:"subMenu", label:"Send Vehicle To Ocean" },
+        { type:"subMenu", label:"Copy Plate" },
+      ]},
+    ]},
+    { label: "Vehicle", subtabs: [
+      { label: "Vehicle Spawner", items: [
+        { type:"subMenu", label:"Spawner Settings" },
+        { type:"subMenu", label:"Saved Vehicles" },
+        { type:"subMenu", label:"Addon Vehicles" },
+        { type:"subMenu", label:"Parking Guy" },
+        { type:"divider", label:"Spawn By Category" },
+        { type:"scrollable", label:"Super", values:["adder","bullet","cheetah","entityxf","infernus","osiris","t20","turismor","zentorno"], value:1 },
+        { type:"scrollable", label:"Sports", values:["banshee","buffalo","carbonizzare","comet2","elegy2","feltzer2","jester","massacro"], value:1 },
+        { type:"scrollable", label:"Muscle", values:["blade","buccaneer","dominator","gauntlet","hotknife","phoenix","sabregt","vigero"], value:1 },
+        { type:"scrollable", label:"Off-Road", values:["bifta","blazer","brawler","dubsta3","insurgent","marshall","sandking"], value:1 },
+        { type:"scrollable", label:"Helicopters", values:["akula","annihilator","buzzard","cargobob","hunter","savage","valkyrie"], value:1 },
+        { type:"scrollable", label:"Planes", values:["besra","cuban800","duster","hydra","lazer","mammatus","miljet","titan"], value:1 },
+        { type:"scrollable", label:"Boats", values:["dinghy","jetmax","marquis","seashark","speeder","squalo","toro","tropic"], value:1 },
+      ]},
+      { label: "Vehicle Mods", items: [
+        { type:"checkbox", label:"Vehicle God Mode", checked:false },
+        { type:"checkbox", label:"Rainbow Vehicle", checked:false },
+        { type:"checkbox", label:"Drift Mode", checked:false },
+        { type:"checkbox", label:"Seatbelt", checked:false },
+        { type:"checkbox", label:"Speed Boost", checked:false },
+        { type:"slider", label:"Speed Multiplier", value:1, min:1, max:20 },
+        { type:"divider", label:"Vehicle Actions" },
+        { type:"subMenu", label:"Repair Vehicle" },
+        { type:"subMenu", label:"Flip Vehicle" },
+        { type:"subMenu", label:"Max Upgrade" },
+        { type:"subMenu", label:"Delete Current Vehicle" },
+      ]},
+    ]},
+    { label: "Weapon", subtabs: [
+      { label: "Weapon Features", items: [
+        { type:"subMenu", label:"Weapon Attachments" },
+        { type:"checkbox", label:"Tp Pick", checked:false },
+        { type:"checkbox", label:"Snap Tap/A D", checked:false },
+        { type:"checkbox", label:"Custom Laser", checked:false },
+        { type:"divider", label:"Combat Assisters" },
+        { type:"checkbox", label:"Aimbot Bypass", checked:false },
+        { type:"scrollable-checkbox", label:"Aimbot", checked:false, values:["Aim Lock","Silent Aim"], value:1 },
+        { type:"scrollable-checkbox", label:"Selected Bone", checked:false, values:["Head","Neck","Chest","Stomach","Left Hand","Right Hand","Left Foot","Right Foot"], value:1 },
+        { type:"slider", label:"Smoothness", value:0, min:0, max:400 },
+        { type:"checkbox", label:"Draw FOV", checked:false },
+        { type:"slider", label:"FOV Size", value:100, min:0, max:500 },
+        { type:"checkbox", label:"Humanized Aimbot", checked:false },
+        { type:"divider", label:"Others Configs" },
+        { type:"checkbox", label:"Target Dead", checked:false },
+        { type:"checkbox", label:"Target Thru Walls", checked:false },
+        { type:"checkbox", label:"Target Invisible", checked:false },
+        { type:"checkbox", label:"Target Only Players", checked:false },
+        { type:"checkbox", label:"Use Friendlist", checked:false },
+        { type:"checkbox", label:"Ignore Criticals", checked:false },
+        { type:"checkbox", label:"Spinbot", checked:false },
+      ]},
+      { label: "Weapon Spawner", items: [
+        { type:"subMenu", label:"Spawn By Name" },
+        { type:"subMenu", label:"Give All Weapons" },
+        { type:"subMenu", label:"Remove All Weapons" },
+        { type:"subMenu", label:"Refill Ammo" },
+        { type:"divider", label:"Spawning Config" },
+        { type:"slider", label:"Ammo Quantity", value:50, min:0, max:250 },
+        { type:"checkbox", label:"As Pickup", checked:false },
+        { type:"checkbox", label:"Equip In Hand", checked:false },
+        { type:"checkbox", label:"Force Weapon Wheel", checked:false },
+        { type:"checkbox", label:"Spoofed", checked:false },
+        { type:"divider", label:"Weapon Spawner" },
+        { type:"scrollable", label:"Melee Weapons", values:["weapon_knuckle","weapon_knife","weapon_bat","weapon_crowbar","weapon_machete"], value:1 },
+        { type:"scrollable", label:"Pistols", values:["weapon_pistol_mk2","weapon_combatpistol","weapon_appistol","weapon_pistol50","weapon_revolver"], value:1 },
+        { type:"scrollable", label:"Smgs", values:["weapon_microsmg","weapon_smg","weapon_assaultsmg","weapon_combatpdw","weapon_minismg"], value:1 },
+        { type:"scrollable", label:"Shotguns", values:["weapon_pumpshotgun","weapon_sawnoffshotgun","weapon_assaultshotgun","weapon_heavyshotgun"], value:1 },
+        { type:"scrollable", label:"Assault Rifles", values:["weapon_assaultrifle","weapon_carbinerifle","weapon_advancedrifle","weapon_specialcarbine"], value:1 },
+        { type:"scrollable", label:"Sniper Rifles", values:["weapon_sniperrifle","weapon_heavysniper","weapon_marksmanrifle"], value:1 },
+        { type:"scrollable", label:"Heavy Weapons", values:["weapon_rpg","weapon_minigun","weapon_railgun","weapon_hominglauncher"], value:1 },
+        { type:"scrollable", label:"Others", values:["weapon_grenade","weapon_molotov","weapon_stickybomb","weapon_petrolcan","weapon_parachute"], value:1 },
+      ]},
+      { label: "Weapon Modifier", items: [
+        { type:"subMenu", label:"Puchamon Mode" },
+        { type:"divider", label:"Weapon Modifiers" },
+        { type:"checkbox", label:"Infinite Ammo", checked:false },
+        { type:"checkbox", label:"Ignore Max Range", checked:false },
+        { type:"checkbox", label:"Weapon RGB", checked:false },
+        { type:"checkbox", label:"No Recoil", checked:false },
+        { type:"checkbox", label:"No Reload", checked:false },
+        { type:"checkbox", label:"No Spread", checked:false },
+        { type:"slider", label:"Set Ammo", value:50, min:-1, max:255 },
+        { type:"divider", label:"Waypoint Related" },
+        { type:"subMenu", label:"Kamikaze Waypoint" },
+      ]},
+    ]},
+    { label: "Visuals", subtabs: [
+      { label: "Visuals", items: [
+        { type:"checkbox", label:"Include Peds", checked:false },
+        { type:"checkbox", label:"Include Self", checked:false },
+        { type:"slider", label:"Distance", value:200, min:1, max:600 },
+        { type:"divider", label:"Individual ESP" },
+        { type:"subMenu", label:"Box ESP" },
+        { type:"subMenu", label:"Skeleton ESP" },
+        { type:"subMenu", label:"Lines ESP" },
+        { type:"subMenu", label:"Bars ESP" },
+        { type:"subMenu", label:"Other ESP" },
+        { type:"divider", label:"Other ESP" },
+        { type:"subMenu", label:"Glowing ESP" },
+        { type:"subMenu", label:"Tracers ESP" },
+        { type:"subMenu", label:"World ESP" },
+        { type:"subMenu", label:"Common ESP" },
+      ]},
+      { label: "Debugger Visuals", items: [
+        { type:"checkbox", label:"Toggle", checked:false },
+        { type:"slider", label:"Range", value:50, min:1, max:200 },
+        { type:"checkbox", label:"Debugger Color", checked:false },
+        { type:"divider", label:"Toggles" },
+        { type:"checkbox", label:"Include Props", checked:false },
+        { type:"checkbox", label:"Include Objects", checked:false },
+        { type:"checkbox", label:"Include Peds", checked:false },
+        { type:"checkbox", label:"Include Vehicles", checked:false },
+        { type:"checkbox", label:"Include Players", checked:false },
+        { type:"checkbox", label:"Include Coords", checked:false },
+        { type:"checkbox", label:"Include Hash", checked:false },
+      ]},
+      { label: "Others Visuals", items: [
+        { type:"checkbox", label:"Toggle Player Blips", checked:false },
+        { type:"checkbox", label:"Remove World Fog", checked:false },
+        { type:"checkbox", label:"Max Brightness", checked:false },
+        { type:"checkbox", label:"Force Third Person", checked:false },
+        { type:"checkbox", label:"See Invisible Players", checked:false },
+        { type:"scrollable-checkbox", label:"FPS Improver", checked:false, values:["FPS Improver 1","FPS Improver 2","FPS Improver 3","FPS Improver 4"], value:1 },
+      ]},
+    ]},
+    { label: "Protections", subtabs: [
+      { label: "Protections", items: [
+        { type:"checkbox", label:"Block Admin Freeze", checked:false },
+        { type:"checkbox", label:"Block Tx-Admin Bring", checked:false },
+        { type:"checkbox", label:"Anti-Handcuff", checked:false },
+        { type:"checkbox", label:"Anti New Player Bypass", checked:false },
+        { type:"checkbox", label:"Anti Fire", checked:false },
+        { type:"checkbox", label:"Anti Attach", checked:false },
+        { type:"checkbox", label:"Anti-VDM", checked:false },
+      ]},
+      { label: "World Protections", items: [
+        { type:"checkbox", label:"Disable Hostile Peds", checked:false },
+        { type:"checkbox", label:"Evade Hostage Situation", checked:false },
+        { type:"checkbox", label:"Evade Admin TP", checked:false },
+      ]},
+      { label: "Others Protections", items: [
+        { type:"subMenu", label:"Remove PTFX" },
+        { type:"subMenu", label:"Stop All Sounds" },
+        { type:"subMenu", label:"Remove Admin Freeze" },
+        { type:"subMenu", label:"Removed Attached Objects" },
+      ]},
+    ]},
+    { label: "Exploits", subtabs: [
+      { label: "Server Exploits", items: [
+        { type:"checkbox", label:"Populate Server", checked:false },
+        { type:"checkbox", label:"Bypass Safezones", checked:false },
+        { type:"checkbox", label:"Punch All Players in Loop", checked:false },
+        { type:"checkbox", label:"Mexican Peds", checked:false },
+        { type:"scrollable-checkbox", label:"Lag Server", checked:false, values:["Method 1","Method 2"], value:1 },
+        { type:"checkbox", label:"Limb Players Around", checked:false },
+        { type:"checkbox", label:"Bring All Players (Client)", checked:false },
+        { type:"subMenu", label:"Kill Everyone" },
+        { type:"subMenu", label:"Crash Players" },
+      ]},
+      { label: "Vehicle Exploits", items: [
+        { type:"checkbox", label:"Skip Hotwire", checked:false },
+        { type:"divider", label:"Big Exploits" },
+        { type:"checkbox", label:"Crazy Drivers", checked:false },
+        { type:"checkbox", label:"Flipped Drivers", checked:false },
+        { type:"checkbox", label:"Invisible Vehicles", checked:false },
+        { type:"checkbox", label:"Rainbow Vehicles", checked:false },
+        { type:"checkbox", label:"Waypoint Vehicles", checked:false },
+        { type:"checkbox", label:"Alarm Vehicles", checked:false },
+        { type:"checkbox", label:"Explode Veh Tires", checked:false },
+        { type:"checkbox", label:"Drop Veh Doors", checked:false },
+        { type:"checkbox", label:"Fly Vehicles", checked:false },
+        { type:"checkbox", label:"Plate Vehicles", checked:false },
+        { type:"checkbox", label:"Max Out All Vehs", checked:false },
+      ]},
+      { label: "Client Exploits", items: [
+        { type:"checkbox", label:"Talk To Everyone", checked:false },
+        { type:"checkbox", label:"Disable Footsteps", checked:false },
+        { type:"checkbox", label:"Disable Impact Ragdoll", checked:false },
+        { type:"checkbox", label:"Bypass AntiBJ", checked:false },
+      ]},
+    ]},
+    { label: "Misc", subtabs: [
+      { label: "Misc Features", items: [
+        { type:"subMenu", label:"Zombie Server Features" },
+        { type:"divider", label:"Others Features" },
+        { type:"subMenu", label:"Resource Stopper" },
+        { type:"subMenu", label:"Custom Luas" },
+        { type:"subMenu", label:"Trigger Finder" },
+        { type:"subMenu", label:"Dynamic Triggers" },
+        { type:"subMenu", label:"Event Logger" },
+        { type:"subMenu", label:"Extra Lists" },
+      ]},
+      { label: "Fun Features", items: [
+        { type:"subMenu", label:"Clear Area" },
+        { type:"divider", label:"Others Features" },
+        { type:"checkbox", label:"Disable Car Sounds", checked:false },
+        { type:"checkbox", label:"Restore Position", checked:false },
+      ]},
+      { label: "Others Features", items: [
+        { type:"subMenu", label:"Trigger Filter" },
+        { type:"subMenu", label:"Webhook Area" },
+      ]},
+    ]},
+    { label: "Settings", subtabs: [
+      { label: "Settings", items: [
+        { type:"subMenu", label:"Menu Colors" },
+        { type:"subMenu", label:"Keybind Manager" },
+        { type:"subMenu", label:"Website Settings" },
+        { type:"subMenu", label:"Config Settings" },
+        { type:"subMenu", label:"Banner Settings" },
+        { type:"subMenu", label:"Anticheat Settings" },
+        { type:"checkbox", label:"Show Keybinds Panel", checked:false, id:"showKeybinds" },
+        { type:"checkbox", label:"Show Spectator List", checked:false, id:"showSpectator" },
+        { type:"subMenu", label:"Toggle UI Mode" },
+        { type:"subMenu", label:"Self Crash" },
+        { type:"divider", label:"Menu Customization" },
+        { type:"subMenu", label:"Menu Position", id:"menuPosition" },
+        { type:"subMenu", label:"Keybinds Position", id:"keybindsPosition" },
+        { type:"subMenu", label:"Spectator List Position", id:"spectatorPosition" },
+        { type:"slider", label:"Scale Menu", value:100, min:50, max:150, id:"menuScale" },
+        { type:"scrollable", label:"Community Designs", values:["Default","Template 1","Template 2","Template 3","Template 4","Template 5"], value:1, id:"communityDesigns" },
+      ]},
+      { label: "Others Settings", items: [
+        { type:"subMenu", label:"Resolution Change" },
+        { type:"checkbox", label:"Notification Position", checked:false },
+        { type:"checkbox", label:"Display Banner", checked:true },
+        { type:"checkbox", label:"Block Certain Inputs", checked:false },
+        { type:"checkbox", label:"Self Protect", checked:false },
+      ]},
+    ]},
+  ]
+};
+
+// State
+let state = {
+  visible: false,
+  categoryIndex: 0,
+  depth: 0,        // 0 = categories list, 1 = subtab list, 2 = items
+  subtabIndex: 0,
+  selectedIndex: 0,
+  scrollOffset: 0,
+  username: "Pulse",
+  bannerLink: "",
+  bannerColor: "210, 210, 210",
+  menuScale: 100,
+  menuX: 50,
+  menuY: 50,
+  dragMode: null,
+  showKeybinds: false,
+  showSpectator: false,
+  keybindsX: 1, keybindsY: 10,
+  spectatorX: 85, spectatorY: 10,
+  activeBanner: 0,
+};
+const MAX_VISIBLE = 9;
+
+function getCurrentItems() {
+  if (state.depth === 0) {
+    return MENU_DATA.categories.map(c => ({ type: "subMenu", label: c.label }));
+  }
+  const cat = MENU_DATA.categories[state.categoryIndex];
+  if (!cat) return [];
+  if (state.depth === 1) {
+    return cat.subtabs.map(st => ({ type: "subMenu", label: st.label }));
+  }
+  const sub = cat.subtabs[state.subtabIndex];
+  return sub ? sub.items : [];
+}
+
+function applyScale() {
+  const s = state.menuScale / 100;
+  document.documentElement.style.setProperty("--menu-scale", s);
+  const wrapper = document.getElementById("menuWrapper");
+  wrapper.style.transform = `scale(${s})`;
+}
+
+function applyPositions() {
+  const wrapper = document.getElementById("menuWrapper");
+  wrapper.style.left = state.menuX + "%";
+  wrapper.style.top = state.menuY + "%";
+  const kb = document.getElementById("keybindsPanel");
+  kb.style.left = state.keybindsX + "vw";
+  kb.style.top = state.keybindsY + "vw";
+  kb.style.right = "auto";
+  const sp = document.getElementById("spectatorPanel");
+  sp.style.left = state.spectatorX + "vw";
+  sp.style.top = state.spectatorY + "vw";
+  sp.style.right = "auto";
+}
+
+function applyBanner() {
+  const banner = document.getElementById("banner");
+  const cfg = BANNER_CONFIG[state.activeBanner];
+  if (cfg && cfg.url) {
+    banner.innerHTML = `<img src="${cfg.url}" draggable="false"><span class="banner-text">PULSE</span>`;
+  } else {
+    banner.innerHTML = `<span class="banner-text">PULSE</span>`;
+  }
+  if (state.bannerLink) {
+    banner.innerHTML = `<img src="${state.bannerLink}" draggable="false"><span class="banner-text">PULSE</span>`;
+  }
+}
+
+function render() {
+  const wrapper = document.getElementById("menuWrapper");
+  const descBar = document.getElementById("descBar");
+  if (!state.visible) {
+    wrapper.classList.remove("visible");
+    descBar.classList.remove("visible");
+    return;
+  }
+  wrapper.classList.add("visible");
+
+  document.documentElement.style.setProperty("--menu-color", state.bannerColor);
+  applyScale();
+  applyPositions();
+
+  // Overlays
+  document.getElementById("keybindsPanel").classList.toggle("visible", state.showKeybinds);
+  document.getElementById("spectatorPanel").classList.toggle("visible", state.showSpectator);
+
+  // Categories bar - breadcrumb
+  const catBar = document.getElementById("categoriesBar");
+  catBar.innerHTML = "";
+  const bc = document.createElement("div");
+  bc.className = "PCategory active";
+  bc.style.flex = "1";
+  if (state.depth === 0) {
+    bc.innerHTML = `<span>Main Menu</span>`;
+  } else if (state.depth === 1) {
+    const cat = MENU_DATA.categories[state.categoryIndex];
+    bc.innerHTML = `<span>Main Menu › ${cat ? cat.label : ""}</span>`;
+  } else {
+    const cat = MENU_DATA.categories[state.categoryIndex];
+    const sub = cat ? cat.subtabs[state.subtabIndex] : null;
+    bc.innerHTML = `<span>${cat ? cat.label : ""} › ${sub ? sub.label : ""}</span>`;
+  }
+  catBar.appendChild(bc);
+
+  // Items
+  const items = getCurrentItems();
+  const total = items.length;
+
+  if (state.selectedIndex >= total) state.selectedIndex = total - 1;
+  if (state.selectedIndex < 0) state.selectedIndex = 0;
+  if (state.selectedIndex < state.scrollOffset) state.scrollOffset = state.selectedIndex;
+  if (state.selectedIndex >= state.scrollOffset + MAX_VISIBLE) state.scrollOffset = state.selectedIndex - MAX_VISIBLE + 1;
+  if (state.scrollOffset < 0) state.scrollOffset = 0;
+
+  const container = document.getElementById("tabsContainer");
+  const selectorBar = document.getElementById("selectorBar");
+  while (container.children.length > 1) container.removeChild(container.lastChild);
+
+  const visibleItems = items.slice(state.scrollOffset, state.scrollOffset + MAX_VISIBLE);
+  const relIdx = state.selectedIndex - state.scrollOffset;
+
+  visibleItems.forEach((item, vi) => {
+    const tab = document.createElement("div");
+    tab.className = "PTab" + (vi === relIdx ? " active" : "");
+
+    if (item.type === "divider") {
+      tab.innerHTML = `<div class="Divider"><div class="Left"></div><span class="Label">${item.label}</span><div class="Right"></div></div>`;
+    } else {
+      const isSelected = vi === relIdx;
+      const showVal = isSelected && (item.type === "slider" || item.type === "slider-checkbox");
+      let labelHtml = `<span class="PTLabel">${showVal ? item.label + ": " + item.value : item.label}</span>`;
+      let controlHtml = "";
+
+      if (item.type === "checkbox") {
+        controlHtml = `<div class="Checkbox ${item.checked ? "Checked" : ""}"><div class="Inside"></div></div>`;
+      } else if (item.type === "slider") {
+        const pct = item.max !== item.min ? ((item.value - item.min) / (item.max - item.min)) * 100 : 0;
+        controlHtml = `<div class="Slider"><div class="Progress" style="width:${pct}%"><div class="Thumb"></div></div></div>`;
+      } else if (item.type === "slider-checkbox") {
+        const pct = item.max !== item.min ? ((item.value - item.min) / (item.max - item.min)) * 100 : 0;
+        controlHtml = `<div class="TOptions"><div class="Slider"><div class="Progress" style="width:${pct}%"><div class="Thumb"></div></div></div><div class="Checkbox ${item.checked ? "Checked" : ""}"><div class="Inside"></div></div></div>`;
+      } else if (item.type === "scrollable") {
+        const val = item.values && item.value ? item.values[item.value - 1] || "" : "";
+        const display = isSelected ? `< ${val} >` : val;
+        controlHtml = `<div class="Scrollable"><span>${display}</span></div>`;
+      } else if (item.type === "scrollable-checkbox") {
+        const val = item.values && item.value ? item.values[item.value - 1] || "" : "";
+        const display = isSelected ? `< ${val} >` : val;
+        controlHtml = `<div class="TOptions"><div class="Scrollable"><span>${display}</span></div><div class="Checkbox ${item.checked ? "Checked" : ""}"><div class="Inside"></div></div></div>`;
+      } else if (item.type === "subMenu") {
+        controlHtml = `<span class="arrow-right">›</span>`;
+      }
+      tab.innerHTML = labelHtml + controlHtml;
+    }
+    container.appendChild(tab);
+  });
+
+  selectorBar.style.top = (relIdx * 1.5625) + "vw";
+  selectorBar.style.height = "1.5625vw";
+
+  const scrollThumb = document.getElementById("scrollThumb");
+  if (total > MAX_VISIBLE) {
+    const thumbH = Math.max(10, (MAX_VISIBLE / total) * 90);
+    const thumbTop = (state.scrollOffset / (total - MAX_VISIBLE)) * (90 - thumbH);
+    scrollThumb.style.height = thumbH + "%";
+    scrollThumb.style.top = thumbTop + "%";
+  } else {
+    scrollThumb.style.height = "90%";
+    scrollThumb.style.top = "0";
+  }
+
+  // Footer
+  const cat = MENU_DATA.categories[state.categoryIndex];
+  let footerText = "";
+  if (state.depth === 0) {
+    footerText = "Main Menu  " + (state.selectedIndex + 1) + " / " + total;
+  } else if (state.depth === 1) {
+    footerText = (cat ? cat.label : "") + "  " + (state.selectedIndex + 1) + " / " + total;
+  } else {
+    const subName = cat && cat.subtabs[state.subtabIndex] ? cat.subtabs[state.subtabIndex].label : "";
+    footerText = subName + "  " + (state.selectedIndex + 1) + " / " + total;
+  }
+  document.getElementById("footerIndicator").textContent = footerText;
+
+  descBar.classList.remove("visible");
+
+  applyBanner();
+}
+
+// Handle special settings actions
+function handleSettingsAction(item) {
+  if (item.id === "menuPosition") {
+    enterDragMode("menu");
+    return true;
+  }
+  if (item.id === "keybindsPosition") {
+    state.showKeybinds = true;
+    enterDragMode("keybinds");
+    return true;
+  }
+  if (item.id === "spectatorPosition") {
+    state.showSpectator = true;
+    enterDragMode("spectator");
+    return true;
+  }
+  return false;
+}
+
+function handleSettingsValueChange(item) {
+  if (item.id === "menuScale") {
+    state.menuScale = item.value;
+    applyScale();
+  }
+  if (item.id === "showKeybinds") {
+    state.showKeybinds = item.checked;
+  }
+  if (item.id === "showSpectator") {
+    state.showSpectator = item.checked;
+  }
+  if (item.id === "communityDesigns") {
+    state.activeBanner = item.value - 1;
+    applyBanner();
+  }
+}
+
+// Drag mode
+let dragState = { active: false, startX: 0, startY: 0, origX: 0, origY: 0 };
+
+function enterDragMode(target) {
+  state.dragMode = target;
+  document.body.classList.add("drag-mode");
+  document.getElementById("dragHint").classList.add("visible");
+  showNotification("info", "Position Mode", "Drag with mouse, Backspace to save", 3000);
+}
+
+function exitDragMode() {
+  state.dragMode = null;
+  dragState.active = false;
+  document.body.classList.remove("drag-mode");
+  document.getElementById("dragHint").classList.remove("visible");
+  showNotification("info", "Position Saved", "New position saved successfully", 2000);
+  render();
+}
+
+document.addEventListener("mousedown", (e) => {
+  if (!state.dragMode) return;
+  dragState.active = true;
+  dragState.startX = e.clientX;
+  dragState.startY = e.clientY;
+  if (state.dragMode === "menu") {
+    dragState.origX = state.menuX;
+    dragState.origY = state.menuY;
+  } else if (state.dragMode === "keybinds") {
+    dragState.origX = state.keybindsX;
+    dragState.origY = state.keybindsY;
+  } else if (state.dragMode === "spectator") {
+    dragState.origX = state.spectatorX;
+    dragState.origY = state.spectatorY;
+  }
+  e.preventDefault();
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (!dragState.active || !state.dragMode) return;
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
+  if (state.dragMode === "menu") {
+    state.menuX = dragState.origX + (dx / window.innerWidth) * 100;
+    state.menuY = dragState.origY + (dy / window.innerHeight) * 100;
+    const wrapper = document.getElementById("menuWrapper");
+    wrapper.style.left = state.menuX + "%";
+    wrapper.style.top = state.menuY + "%";
+  } else if (state.dragMode === "keybinds") {
+    state.keybindsX = dragState.origX + (dx / window.innerWidth) * 100;
+    state.keybindsY = dragState.origY + (dy / window.innerHeight) * 100;
+    const kb = document.getElementById("keybindsPanel");
+    kb.style.left = state.keybindsX + "vw";
+    kb.style.top = state.keybindsY + "vw";
+  } else if (state.dragMode === "spectator") {
+    state.spectatorX = dragState.origX + (dx / window.innerWidth) * 100;
+    state.spectatorY = dragState.origY + (dy / window.innerHeight) * 100;
+    const sp = document.getElementById("spectatorPanel");
+    sp.style.left = state.spectatorX + "vw";
+    sp.style.top = state.spectatorY + "vw";
+  }
+});
+
+document.addEventListener("mouseup", () => { dragState.active = false; });
+
+// Message handler (for Lua SendDuiMessage)
+window.addEventListener("message", (event) => {
+  const data = event.data;
+  if (!data || typeof data !== "object") return;
+
+  if (data.action === "showUI") {
+    state.visible = !!data.visible;
+    if (data.username) state.username = data.username;
+    render();
+  }
+  if (data.action === "updateBanner") {
+    if (data.bannerLink) state.bannerLink = data.bannerLink;
+    if (data.bannerColor) {
+      state.bannerColor = data.bannerColor;
+    }
+    render();
+  }
+  if (data.action === "updateElements") {
+    if (data.elements) {
+      const cat = MENU_DATA.categories[state.categoryIndex];
+      if (cat && cat.subtabs[state.subtabIndex]) {
+        cat.subtabs[state.subtabIndex].items = data.elements;
+      }
+    }
+    if (typeof data.index === "number") state.selectedIndex = data.index;
+    if (typeof data.categoryIndex === "number") state.categoryIndex = data.categoryIndex;
+    render();
+  }
+  if (data.action === "keydown" && typeof data.index === "number") {
+    state.selectedIndex = data.index;
+    render();
+  }
+  if (data.action === "keyInput" && data.key) {
+    const keyMap = { "W": "ArrowUp", "S": "ArrowDown", "A": "ArrowLeft", "D": "ArrowRight", "Enter": "Enter", "Backspace": "Backspace", "F6": "F6" };
+    const mapped = keyMap[data.key] || data.key;
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: mapped, bubbles: true }));
+  }
+  if (data.action === "showNotification" && data.title) {
+    showNotification(data.type || "info", data.title, data.desc || "", data.duration || 4000);
+  }
+  if (data.action === "displayFreecam") {
+    document.getElementById("freecamOverlay").classList.toggle("visible", !!data.visible);
+  }
+  if (data.action === "updatePositionPrecise" && data.position) {
+    state.menuX = data.position.x !== undefined ? data.position.x : state.menuX;
+    state.menuY = data.position.y !== undefined ? data.position.y : state.menuY;
+    applyPositions();
+  }
+  if (data.action === "setScale" && data.scale) {
+    state.menuScale = data.scale;
+    applyScale();
+  }
+});
+
+function showNotification(type, title, desc, duration) {
+  const wrapper = document.getElementById("notifWrapper");
+  const el = document.createElement("div");
+  el.className = "Notification";
+  el.innerHTML = `<div><div class="NotificationTitle">${title}</div><div class="NotificationDesc">${desc}</div></div>`;
+  wrapper.appendChild(el);
+  requestAnimationFrame(() => { el.offsetWidth; el.classList.add("enter"); });
+  setTimeout(() => { el.classList.remove("enter"); setTimeout(() => el.remove(), 500); }, duration);
+}
+
+// Keyboard
+function skipDivider(items, idx, dir) {
+  let ni = idx;
+  while (ni >= 0 && ni < items.length && items[ni] && items[ni].type === "divider") {
+    ni += dir;
+    if (ni < 0) ni = items.length - 1;
+    if (ni >= items.length) ni = 0;
+    if (ni === idx) break;
+  }
+  return ni;
+}
+
+document.addEventListener("keydown", (e) => {
+  // Drag mode: only backspace exits
+  if (state.dragMode) {
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      exitDragMode();
+    }
+    return;
+  }
+
+  if (!state.visible && e.key !== "F6") return;
+
+  const items = getCurrentItems();
+  const total = items.length;
+
+  if (e.key === "F6") {
+    state.visible = !state.visible;
+    if (state.visible) { state.depth = 0; state.selectedIndex = 0; state.scrollOffset = 0; }
+    render();
+    return;
+  }
+  if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+    e.preventDefault();
+    let ni = state.selectedIndex - 1;
+    if (ni < 0) ni = total - 1;
+    state.selectedIndex = skipDivider(items, ni, -1);
+    render();
+  }
+  if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+    e.preventDefault();
+    let ni = state.selectedIndex + 1;
+    if (ni >= total) ni = 0;
+    state.selectedIndex = skipDivider(items, ni, 1);
+    render();
+  }
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+    if (state.depth === 2) {
+      const item = items[state.selectedIndex];
+      if (item) {
+        if ((item.type === "scrollable" || item.type === "scrollable-checkbox") && item.values) {
+          item.value = Math.max(1, (item.value || 1) - 1);
+          handleSettingsValueChange(item);
+        }
+        if ((item.type === "slider" || item.type === "slider-checkbox") && item.min !== undefined) {
+          item.value = Math.max(item.min, (item.value || 0) - (item.step || 1));
+          handleSettingsValueChange(item);
+        }
+      }
+    }
+    render();
+  }
+  if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+    if (state.depth === 2) {
+      const item = items[state.selectedIndex];
+      if (item) {
+        if ((item.type === "scrollable" || item.type === "scrollable-checkbox") && item.values) {
+          item.value = Math.min(item.values.length, (item.value || 1) + 1);
+          handleSettingsValueChange(item);
+        }
+        if ((item.type === "slider" || item.type === "slider-checkbox") && item.max !== undefined) {
+          item.value = Math.min(item.max, (item.value || 0) + (item.step || 1));
+          handleSettingsValueChange(item);
+        }
+      }
+    }
+    render();
+  }
+  if (e.key === "Enter") {
+    const item = items[state.selectedIndex];
+    if (item) {
+      // depth 0: select category -> go to subtabs
+      if (state.depth === 0 && item.type === "subMenu") {
+        state.categoryIndex = state.selectedIndex;
+        state.depth = 1;
+        state.selectedIndex = 0;
+        state.scrollOffset = 0;
+        render();
+        return;
+      }
+      // depth 1: select subtab -> go to items
+      if (state.depth === 1 && item.type === "subMenu") {
+        state.subtabIndex = state.selectedIndex;
+        state.depth = 2;
+        state.selectedIndex = 0;
+        state.scrollOffset = 0;
+        render();
+        return;
+      }
+      // depth 2: toggle/action
+      if (item.type === "checkbox" || item.type === "slider-checkbox" || item.type === "scrollable-checkbox") {
+        item.checked = !item.checked;
+        handleSettingsValueChange(item);
+      }
+      if (item.type === "subMenu" && state.depth === 2) {
+        if (!handleSettingsAction(item)) {
+          showNotification("info", item.label, "Submenu opened", 1500);
+        }
+      }
+    }
+    render();
+  }
+  if (e.key === "Backspace" || e.key === "Delete") {
+    e.preventDefault();
+    if (state.depth === 2) {
+      state.depth = 1;
+      state.selectedIndex = state.subtabIndex;
+      state.scrollOffset = 0;
+    } else if (state.depth === 1) {
+      state.depth = 0;
+      state.selectedIndex = state.categoryIndex;
+      state.scrollOffset = 0;
+    }
+    render();
+  }
+});
+
+// Auto-show for preview
+state.visible = true;
+render();
+</script>
+</body>
+</html>
