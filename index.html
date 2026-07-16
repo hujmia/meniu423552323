@@ -714,11 +714,12 @@ let state = {
   bannerLink: "",
   bannerColor: "210, 210, 210",
   menuScale: 100,
-  menuX: 50,
+  menuX: 22,
   menuY: 50,
   dragMode: null,
   showKeybinds: false,
   showSpectator: false,
+  subMenuStack: [],
   keybindsX: 1, keybindsY: 10,
   spectatorX: 85, spectatorY: 10,
   activeBanner: 0,
@@ -733,6 +734,9 @@ function getCurrentItems() {
   if (!cat) return [];
   if (state.depth === 1) {
     return cat.subtabs.map(st => ({ type: "subMenu", label: st.label }));
+  }
+  if (state.subMenuStack.length > 0) {
+    return state.subMenuStack[state.subMenuStack.length - 1].items;
   }
   const sub = cat.subtabs[state.subtabIndex];
   return sub ? sub.items : [];
@@ -998,6 +1002,14 @@ window.addEventListener("message", (event) => {
   const data = event.data;
   if (!data || typeof data !== "object") return;
 
+  if (data.action === "resetNav") {
+    state.depth = 0;
+    state.categoryIndex = 0;
+    state.subtabIndex = 0;
+    state.selectedIndex = 0;
+    state.scrollOffset = 0;
+    state.subMenuStack = [];
+  }
   if (data.action === "showUI") {
     state.visible = !!data.visible;
     if (data.username) state.username = data.username;
@@ -1029,6 +1041,42 @@ window.addEventListener("message", (event) => {
     const keyMap = { "W": "ArrowUp", "S": "ArrowDown", "A": "ArrowLeft", "D": "ArrowRight", "Enter": "Enter", "Backspace": "Backspace", "F6": "F6" };
     const mapped = keyMap[data.key] || data.key;
     document.dispatchEvent(new KeyboardEvent("keydown", { key: mapped, bubbles: true }));
+  }
+  if (data.action === "updateItemState") {
+    let targetItem = null;
+    if (state.subMenuStack.length > 0) {
+      const top = state.subMenuStack[state.subMenuStack.length - 1];
+      if (top.items[data.index]) targetItem = top.items[data.index];
+    } else {
+      const cat = MENU_DATA.categories[data.cat];
+      if (cat) {
+        const sub = cat.subtabs[data.sub];
+        if (sub && sub.items[data.index]) targetItem = sub.items[data.index];
+      }
+    }
+    if (targetItem) {
+      if (data.checked !== undefined) targetItem.checked = data.checked;
+      if (data.value !== undefined) targetItem.value = data.value;
+      if (data.scrollValue !== undefined) targetItem.value = data.scrollValue;
+    }
+    render();
+  }
+  if (data.action === "pushSubMenu" && data.items) {
+    state.subMenuStack.push({ items: data.items, prevSel: state.selectedIndex });
+    state.selectedIndex = 0;
+    state.scrollOffset = 0;
+    render();
+  }
+  if (data.action === "popSubMenu") {
+    if (state.subMenuStack.length > 0) {
+      const prev = state.subMenuStack.pop();
+      state.selectedIndex = prev.prevSel || 0;
+      state.scrollOffset = 0;
+      if (data.items && state.subMenuStack.length > 0) {
+        state.subMenuStack[state.subMenuStack.length - 1].items = data.items;
+      }
+    }
+    render();
   }
   if (data.action === "showNotification" && data.title) {
     showNotification(data.type || "info", data.title, data.desc || "", data.duration || 4000);
@@ -1145,6 +1193,7 @@ document.addEventListener("keydown", (e) => {
         state.depth = 1;
         state.selectedIndex = 0;
         state.scrollOffset = 0;
+        state.subMenuStack = [];
         render();
         return;
       }
@@ -1154,6 +1203,7 @@ document.addEventListener("keydown", (e) => {
         state.depth = 2;
         state.selectedIndex = 0;
         state.scrollOffset = 0;
+        state.subMenuStack = [];
         render();
         return;
       }
@@ -1172,7 +1222,11 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.key === "Backspace" || e.key === "Delete") {
     e.preventDefault();
-    if (state.depth === 2) {
+    if (state.depth === 2 && state.subMenuStack.length > 0) {
+      const prev = state.subMenuStack.pop();
+      state.selectedIndex = prev.prevSel || 0;
+      state.scrollOffset = 0;
+    } else if (state.depth === 2) {
       state.depth = 1;
       state.selectedIndex = state.subtabIndex;
       state.scrollOffset = 0;
@@ -1180,6 +1234,8 @@ document.addEventListener("keydown", (e) => {
       state.depth = 0;
       state.selectedIndex = state.categoryIndex;
       state.scrollOffset = 0;
+    } else if (state.depth === 0) {
+      state.visible = false;
     }
     render();
   }
